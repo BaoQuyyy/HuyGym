@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>GYM PRO v5 — Quản Lý Học Viên</title>
+<title> HUY GYM — Quản Lý Học Viên</title>
 
 <!-- PWA Meta Tags -->
-<meta name="application-name" content="GYM PRO"/>
+<meta name="application-name" content="HUY GYM"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
-<meta name="apple-mobile-web-app-title" content="GYM PRO"/>
+<meta name="apple-mobile-web-app-title" content="HUY GYM"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="theme-color" content="#6c47ff"/>
 <meta name="description" content="Ứng dụng quản lý học viên phòng gym với Firebase sync"/>
@@ -527,7 +527,7 @@ tr.sel-row td{background:rgba(108,71,255,.04)!important}
 <div class="loading-overlay" id="loading-overlay">
   <div style="width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#6c47ff,#9b6fff);display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 8px 28px rgba(108,71,255,.35)">🏋️</div>
   <div class="spinner"></div>
-  <div style="font-family:var(--fh);font-size:15px;font-weight:700;color:var(--t0)">GYM PRO</div>
+  <div style="font-family:var(--fh);font-size:15px;font-weight:700;color:var(--t0)">HUY GYM</div>
   <div style="font-size:12px;color:var(--t2)" id="loading-msg">Đang kết nối Firebase…</div>
 </div>
 
@@ -538,7 +538,7 @@ tr.sel-row td{background:rgba(108,71,255,.04)!important}
   <div class="logo">
     <div class="logo-icon">🏋️</div>
     <div>
-      <div class="logo-name">GYM PRO</div>
+      <div class="logo-name">HUY GYM</div>
       <div class="logo-sub">Quản Lý v5 · PWA</div>
     </div>
   </div>
@@ -574,7 +574,7 @@ tr.sel-row td{background:rgba(108,71,255,.04)!important}
 
   <!-- PWA Install Banner -->
   <div id="pwa-banner">
-    <span>📱 <b>Cài đặt GYM PRO</b> lên màn hình chính để dùng như app!</span>
+    <span>📱 <b>Cài đặt HUY GYM</b> lên màn hình chính để dùng như app!</span>
     <button class="pwa-install-btn" id="pwa-install-btn">Cài đặt</button>
     <button class="pwa-dismiss-btn" id="pwa-dismiss-btn">✕</button>
   </div>
@@ -1392,7 +1392,7 @@ document.getElementById('pwa-install-btn')?.addEventListener('click',async()=>{
   if(!deferredPrompt) return;
   deferredPrompt.prompt();
   const{outcome}=await deferredPrompt.userChoice;
-  if(outcome==='accepted') toast('GYM PRO đã được cài đặt! 📱','ok');
+  if(outcome==='accepted') toast('HUY GYM đã được cài đặt! 📱','ok');
   deferredPrompt=null;
   document.getElementById('pwa-banner').classList.remove('show');
 });
