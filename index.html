@@ -692,6 +692,7 @@ tr.sel-row td{background:rgba(108,71,255,.04)!important}
     <div class="nv" onclick="buNgayLe()"><span class="ni">🎉</span><span>Bù ngày nghỉ lễ</span></div>
     <div class="nav-sec" style="margin-top:4px">Nhật ký</div>
     <div class="nv" id="nav-log" onclick="showPage('log');closeSidebar()"><span class="ni">📋</span><span>Lịch sử hoạt động</span></div>
+    <div class="nv" id="nav-staff" onclick="showPage('staff');closeSidebar()"><span class="ni">👥</span><span>Hoạt động nhân viên</span></div>
     <div class="nav-sec" style="margin-top:4px">Dữ liệu</div>
     <div class="nv" onclick="exportData()"><span class="ni">💾</span><span>Xuất JSON</span></div>
     <div class="nv" onclick="importData()"><span class="ni">📂</span><span>Nhập JSON</span></div>
@@ -858,7 +859,43 @@ tr.sel-row td{background:rgba(108,71,255,.04)!important}
     </div>
   </div>
 
-  <!-- Status bar -->
+  <!-- ══ PAGE: Staff Activity (Admin only) ══ -->
+  <div class="page" id="page-staff">
+    <div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden">
+      <!-- Header bar -->
+      <div class="log-filters" id="staff-filters" style="gap:10px;flex-direction:column">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;width:100%">
+          <span style="font-family:var(--fh);font-size:13.5px;font-weight:800;color:var(--t0)">👥 Hoạt động theo nhân viên</span>
+          <span id="staff-admin-badge" class="role-admin" style="display:none">Admin Only</span>
+          <div style="margin-left:auto;display:flex;gap:7px;align-items:center;flex-wrap:wrap">
+            <select id="staff-date-sel" onchange="setStaffDate(this.value)"
+              style="font-size:11.5px;padding:5px 10px;border:1.5px solid var(--border2);border-radius:8px;background:#f8f9fc;color:var(--t0);font-family:var(--fb);outline:none;cursor:pointer">
+              <option value="all">Tất cả thời gian</option>
+              <option value="today">Hôm nay</option>
+              <option value="yesterday">Hôm qua</option>
+              <option value="week">Tuần này</option>
+              <option value="month">Tháng này</option>
+              <option value="last">Tháng trước</option>
+            </select>
+            <select id="staff-action-sel" onchange="renderStaff()"
+              style="font-size:11.5px;padding:5px 10px;border:1.5px solid var(--border2);border-radius:8px;background:#f8f9fc;color:var(--t0);font-family:var(--fb);outline:none;cursor:pointer">
+              <option value="all">Tất cả hành động</option>
+              <option value="add">➕ Thêm</option>
+              <option value="edit">✏️ Sửa</option>
+              <option value="delete">🗑 Xóa</option>
+              <option value="login">🔑 Đăng nhập</option>
+              <option value="other">⚙️ Khác</option>
+            </select>
+            <span id="staff-total-badge" style="font-size:11px;color:var(--t2)"></span>
+          </div>
+        </div>
+        <!-- Staff tabs -->
+        <div id="staff-tabs" style="display:flex;gap:6px;flex-wrap:wrap;overflow-x:auto;padding-bottom:2px;scrollbar-width:none"></div>
+      </div>
+      <!-- Staff content -->
+      <div style="flex:1;overflow-y:auto;min-height:0" id="staff-content"></div>
+    </div>
+  </div>
   <div class="statusbar">
     <div class="sd"></div>
     <div class="sm" id="smsg">Đang kết nối…</div>
@@ -974,6 +1011,21 @@ let _fbReady=false;
 let activeChip='all';
 
 // ── Helpers ──
+// ── Vietnamese accent-insensitive search ──
+function removeAccents(str){
+  return String(str||'')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .replace(/đ/g,'d').replace(/Đ/g,'D')
+    .toLowerCase();
+}
+function vSearch(text, query){
+  if(!query) return true;
+  const nt=removeAccents(text), nq=removeAccents(query);
+  // also try direct match for exact accented text
+  return nt.includes(nq) || text.toLowerCase().includes(query.toLowerCase());
+}
+
 function normTT(tt){
   if(!tt) return 'active';
   if(['active','warning','expired','paused'].includes(tt)) return tt;
@@ -1100,6 +1152,7 @@ function showPage(p){
     thongke:'Thống kê <span>/ Báo cáo tổng hợp</span>',
     biendog:'Biến động <span>/ So sánh tháng</span>',
     log:'📋 Nhật ký <span>/ Lịch sử hoạt động</span>',
+    staff:'👥 Nhân viên <span>/ Hoạt động theo từng người</span>',
   };
   document.getElementById('bc').innerHTML=bcs[p]||'';
   document.getElementById('sw-wrap').style.visibility=p==='dashboard'?'':'hidden';
@@ -1108,6 +1161,7 @@ function showPage(p){
   if(p==='thongke') renderTK();
   if(p==='biendog'){bdPopulateMonthSel();renderBD();}
   if(p==='log') renderLog();
+  if(p==='staff') renderStaff();
 }
 
 // ── Chip Filter ──
@@ -1126,7 +1180,7 @@ function getFlt(){
   const q=document.getElementById('search').value.toLowerCase().trim();
   let list=[...recs];
   if(activeChip!=='all') list=list.filter(r=>getTag(r)===activeChip);
-  if(q) list=list.filter(r=>r.ten.toLowerCase().includes(q)||(r.sdt||'').includes(q)||(r.ghi_chu||'').toLowerCase().includes(q));
+  if(q) list=list.filter(r=>vSearch(r.ten,q)||(r.sdt||'').includes(q)||vSearch(r.ghi_chu||'',q));
   return list;
 }
 
@@ -1640,6 +1694,7 @@ function doLogin(){
   const ov = document.getElementById('login-overlay');
   if(ov) ov.classList.add('hidden');
   updateUserBadge();
+  logAct('login', {device: navigator.userAgent.slice(0,60)});
   toast('Xin chào, ' + name + (selectedRole==='admin'?' 👑':' 👋'), 'ok');
 }
 
@@ -1705,6 +1760,8 @@ function initLogSync(){
     const raw=snap.val();
     activityLog = raw ? Object.values(raw).sort((a,b)=>b.ts.localeCompare(a.ts)) : [];
     renderLog();
+    // Refresh staff page if active
+    if(document.getElementById('page-staff')?.classList.contains('active')) renderStaff();
   }, e=>console.error('Log sync error:',e));
 }
 
@@ -1716,6 +1773,7 @@ const ACTION_META = {
   holiday:    {icon:'🎉',label:'Bù ngày nghỉ lễ', bg:'rgba(224,114,42,.1)',col:'var(--orange)'},
   import:     {icon:'📂',label:'Nhập dữ liệu',    bg:'rgba(108,71,255,.1)',col:'var(--purple)'},
   undo:       {icon:'↩️',label:'Hoàn tác',         bg:'rgba(74,88,120,.1)', col:'var(--t1)'},
+  login:      {icon:'🔑',label:'Đăng nhập',         bg:'rgba(14,168,104,.1)',col:'var(--green)'},
 };
 
 let logDateFilter = 'all';
@@ -1866,6 +1924,225 @@ function clearAllLogs(){
   toast('Đã xóa toàn bộ lịch sử','warn');
 }
 
+// ══════════════════════════════════════════════════════
+// STAFF ACTIVITY PAGE
+// ══════════════════════════════════════════════════════
+let staffDateFilter = 'all';
+let staffSelectedUser = 'all';
+
+function setStaffDate(v){
+  staffDateFilter = v;
+  renderStaff();
+}
+
+function getStaffFilteredLog(){
+  let list = [...activityLog];
+  // Date filter
+  if(staffDateFilter !== 'all'){
+    const [from, to] = getDateRange(staffDateFilter);
+    list = list.filter(x=>{
+      const d = new Date(x.ts);
+      if(from && d < from) return false;
+      if(to   && d > to)   return false;
+      return true;
+    });
+  }
+  // Action filter
+  const asel = document.getElementById('staff-action-sel');
+  const af = asel ? asel.value : 'all';
+  if(af !== 'all'){
+    if(af === 'login'){
+      list = list.filter(x => x.action === 'login');
+    } else if(af === 'other'){
+      const other = ['update_all','holiday','import','undo'];
+      list = list.filter(x => other.includes(x.action));
+    } else {
+      list = list.filter(x => x.action === af);
+    }
+  }
+  return list;
+}
+
+function renderStaff(){
+  const contentEl = document.getElementById('staff-content');
+  const tabsEl    = document.getElementById('staff-tabs');
+  const totalBadge= document.getElementById('staff-total-badge');
+  const adminBadge= document.getElementById('staff-admin-badge');
+  if(!contentEl || !tabsEl) return;
+
+  // Show admin badge only for admin
+  if(adminBadge) adminBadge.style.display = currentUser?.role==='admin' ? '' : 'none';
+
+  // Non-admin: show restricted message
+  if(currentUser?.role !== 'admin'){
+    tabsEl.innerHTML = '';
+    contentEl.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;padding:80px 20px;color:var(--t2);gap:14px">
+      <div style="font-size:52px;opacity:.15">🔒</div>
+      <div style="font-weight:700;font-size:15px;color:var(--t0)">Chỉ Admin mới xem được</div>
+      <div style="font-size:12px;text-align:center;max-width:280px">Đăng nhập với tài khoản Admin để xem lịch sử hoạt động của từng nhân viên</div>
+    </div>`;
+    return;
+  }
+
+  const filteredLog = getStaffFilteredLog();
+
+  // Group by user
+  const byUser = {};
+  filteredLog.forEach(e=>{
+    const u = e.user || '?';
+    if(!byUser[u]) byUser[u] = { name:u, color:e.color||'var(--purple)', role:e.role||'user', entries:[] };
+    byUser[u].entries.push(e);
+  });
+
+  const users = Object.values(byUser).sort((a,b)=>b.entries.length - a.entries.length);
+  const allCount = filteredLog.length;
+
+  if(totalBadge) totalBadge.textContent = allCount + ' thao tác · ' + users.length + ' người';
+
+  // Validate selectedUser still exists
+  if(staffSelectedUser !== 'all' && !byUser[staffSelectedUser]) staffSelectedUser = 'all';
+
+  // Render tabs
+  const tabAll = `<button onclick="staffSelectUser('all')" style="
+    display:flex;align-items:center;gap:7px;padding:7px 14px;border-radius:99px;border:2px solid;
+    cursor:pointer;font-family:var(--fb);font-size:12px;font-weight:700;white-space:nowrap;transition:all .15s;
+    ${staffSelectedUser==='all'?'background:var(--purple);color:#fff;border-color:var(--purple);':'background:#fff;color:var(--t1);border-color:var(--border2);'}
+  "><span>👥</span><span>Tất cả</span><span style="
+    font-size:10.5px;padding:1px 7px;border-radius:99px;font-weight:700;
+    ${staffSelectedUser==='all'?'background:rgba(255,255,255,.25);color:#fff':'background:var(--purple-soft);color:var(--purple)'}
+  ">${allCount}</span></button>`;
+
+  const userTabs = users.map(u => {
+    const sel = staffSelectedUser === u.name;
+    const cnt = u.entries.length;
+    const roleIcon = u.role==='admin'?'👑':'👤';
+    return `<button onclick="staffSelectUser('${esc(u.name)}')" style="
+      display:flex;align-items:center;gap:7px;padding:7px 14px;border-radius:99px;border:2px solid;
+      cursor:pointer;font-family:var(--fb);font-size:12px;font-weight:700;white-space:nowrap;transition:all .15s;
+      ${sel?`background:${u.color};color:#fff;border-color:${u.color};`:`background:#fff;color:var(--t1);border-color:var(--border2);`}
+    ">
+      <span style="width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;
+        ${sel?'background:rgba(255,255,255,.25);color:#fff;':'background:'+u.color+'22;color:'+u.color}
+      ">${nameInitials(u.name)}</span>
+      <span>${esc(u.name)}</span>
+      <span style="font-size:10.5px;">${roleIcon}</span>
+      <span style="font-size:10.5px;padding:1px 7px;border-radius:99px;font-weight:700;
+        ${sel?'background:rgba(255,255,255,.25);color:#fff':'background:#f0f3fa;color:var(--t1)'}
+      ">${cnt}</span>
+    </button>`;
+  }).join('');
+  tabsEl.innerHTML = tabAll + userTabs;
+
+  // Determine entries to show
+  const showUsers = staffSelectedUser==='all' ? users : users.filter(u=>u.name===staffSelectedUser);
+
+  if(!filteredLog.length){
+    contentEl.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;padding:60px 20px;color:var(--t2);gap:10px">
+      <div style="font-size:44px;opacity:.15">📋</div>
+      <div style="font-weight:600;font-size:14px">Chưa có hoạt động nào</div>
+    </div>`;
+    return;
+  }
+
+  if(!showUsers.length){
+    contentEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--t2);font-size:13px">Không có dữ liệu</div>`;
+    return;
+  }
+
+  // Render each user block
+  const ACTION_COUNTS_KEYS = ['add','edit','delete','update_all','holiday','import','undo','login'];
+
+  contentEl.innerHTML = showUsers.map(u=>{
+    // Count by action
+    const counts = {};
+    ACTION_COUNTS_KEYS.forEach(k=>counts[k]=0);
+    u.entries.forEach(e=>{ if(counts[e.action]!==undefined) counts[e.action]++; else counts['other']=(counts['other']||0)+1; });
+
+    const chips = [
+      {k:'add',icon:'➕',col:'var(--green)'},
+      {k:'edit',icon:'✏️',col:'var(--purple)'},
+      {k:'delete',icon:'🗑',col:'var(--red)'},
+      {k:'update_all',icon:'🔁',col:'#0891b2'},
+      {k:'holiday',icon:'🎉',col:'var(--orange)'},
+      {k:'import',icon:'📂',col:'var(--purple)'},
+      {k:'undo',icon:'↩️',col:'var(--t1)'},
+    ].filter(c=>counts[c.k]>0).map(c=>`
+      <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;
+        background:${c.col}18;border:1.5px solid ${c.col}44;color:${c.col};font-size:11px;font-weight:700">
+        ${c.icon} ${counts[c.k]}
+      </span>`).join('');
+
+    // Last activity
+    const last = u.entries[0];
+    const lastDt = last ? new Date(last.ts) : null;
+    const lastStr = lastDt ? lastDt.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'})+' '+lastDt.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}) : '—';
+
+    // Entry list
+    const entryRows = u.entries.slice(0,50).map(entry=>{
+      const m = ACTION_META[entry.action]||{icon:'⚙️',label:entry.action,bg:'var(--bg-input)',col:'var(--t2)'};
+      const dt = new Date(entry.ts);
+      const timeStr = dt.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+dt.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
+      let desc = '';
+      if(entry.data){
+        if(entry.action==='add') desc=`Thêm: <b>${esc(entry.data.ten||'')}</b>`;
+        else if(entry.action==='edit'){
+          desc=`Sửa: <b>${esc(entry.data.after?.ten||entry.data.ten||'')}</b>`;
+          if(entry.data.changes&&Object.keys(entry.data.changes).length){
+            const parts=Object.entries(entry.data.changes).slice(0,2).map(([k,v])=>`${k}→${esc(String(v[1]||''))}`);
+            desc+=' · '+parts.join(', ');
+          }
+        }
+        else if(entry.action==='delete') desc=`Xóa: <b>${esc(entry.data.ten||'')}</b>`;
+        else if(entry.action==='update_all') desc=`Cập nhật ${entry.data.count||0} học viên`;
+        else if(entry.action==='holiday') desc=`Bù ${entry.data.days||0} ngày cho ${entry.data.count||0} HV`;
+        else if(entry.action==='import') desc=`Nhập ${entry.data.count||0} học viên`;
+        else if(entry.action==='undo') desc=`Hoàn tác: ${esc(entry.data.what||'')}`;
+        else if(entry.action==='login') desc=`Đăng nhập hệ thống`;
+      }
+      return `<div style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--border);transition:background .1s" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">
+        <div style="width:28px;height:28px;border-radius:8px;background:${m.bg};display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">${m.icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:600;color:var(--t0)">${m.label}</div>
+          <div style="font-size:11px;color:var(--t2);margin-top:1px">${desc||'—'}</div>
+        </div>
+        <div style="font-size:10px;color:var(--t2);text-align:right;flex-shrink:0;white-space:nowrap">${timeStr}</div>
+      </div>`;
+    }).join('');
+
+    const moreCount = u.entries.length - 50;
+
+    return `<div style="background:#fff;border:1.5px solid var(--border);border-radius:14px;overflow:hidden;margin:12px 16px">
+      <!-- User header -->
+      <div style="padding:14px 18px;border-bottom:1.5px solid var(--border);display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,${u.color}0d,transparent)">
+        <div style="width:44px;height:44px;border-radius:50%;background:${u.color}22;border:2px solid ${u.color}44;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:${u.color};flex-shrink:0">${nameInitials(u.name)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="font-family:var(--fh);font-size:15px;font-weight:800;color:var(--t0)">${esc(u.name)}</span>
+            <span class="${u.role==='admin'?'role-admin':'role-user'}">${u.role==='admin'?'👑 Admin':'👤 Nhân viên'}</span>
+          </div>
+          <div style="font-size:11px;color:var(--t2);margin-top:3px">Hoạt động gần nhất: ${lastStr}</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">${chips}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-family:var(--fh);font-size:26px;font-weight:800;color:${u.color};line-height:1">${u.entries.length}</div>
+          <div style="font-size:9.5px;color:var(--t2);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-top:2px">thao tác</div>
+        </div>
+      </div>
+      <!-- Entry list -->
+      ${entryRows}
+      ${moreCount>0?`<div style="text-align:center;padding:10px;color:var(--t2);font-size:11px;background:#fafbff;border-top:1px solid var(--border)">... và ${moreCount} thao tác khác</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function staffSelectUser(name){
+  staffSelectedUser = name;
+  renderStaff();
+  // Scroll to top
+  const el = document.getElementById('staff-content');
+  if(el) el.scrollTop = 0;
+}
+
 Object.assign(window,{
   toggleSidebar,closeSidebar,closeBnActive,
   showPage,openAdd,openEdit,editSel,closeForm,saveForm,
@@ -1875,6 +2152,7 @@ Object.assign(window,{
   openAM,closeAM,jumpToDashboard,
   doLogin,doLogout,selectRole,
   setLogFilter,setLogDate,renderLog,undoEntry,clearAllLogs,
+  renderStaff,staffSelectUser,setStaffDate,
   renderTK,renderBD,bdGoToday,bdPopulateMonthSel,bdChangeThis,bdChangePrev,
 });
 
