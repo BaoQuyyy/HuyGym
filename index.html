@@ -822,15 +822,36 @@ tr.sel-row td{background:rgba(108,71,255,.04)!important}
   <div class="page" id="page-log">
     <div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden">
       <div class="log-filters" id="log-filters">
-        <span style="font-size:12px;font-weight:700;color:var(--t0);margin-right:4px">🗂 Lọc:</span>
-        <button class="log-chip active" onclick="setLogFilter('all')">Tất cả</button>
-        <button class="log-chip" onclick="setLogFilter('add')">➕ Thêm</button>
-        <button class="log-chip" onclick="setLogFilter('edit')">✏️ Sửa</button>
-        <button class="log-chip" onclick="setLogFilter('delete')">🗑 Xóa</button>
-        <button class="log-chip" onclick="setLogFilter('other')">⚙️ Khác</button>
-        <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
-          <span id="log-count" style="font-size:11px;color:var(--t2)"></span>
-          <button class="btn bs" style="font-size:11px;padding:4px 10px" onclick="clearAllLogs()" id="clear-log-btn">🗑 Xóa tất cả log</button>
+        <!-- Row 1: Action filter -->
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;width:100%">
+          <span style="font-size:11px;font-weight:700;color:var(--t2);letter-spacing:.5px;text-transform:uppercase;min-width:40px">Loại:</span>
+          <button class="log-chip active" id="lf-all"    onclick="setLogFilter('all')">Tất cả</button>
+          <button class="log-chip"        id="lf-add"    onclick="setLogFilter('add')">➕ Thêm</button>
+          <button class="log-chip"        id="lf-edit"   onclick="setLogFilter('edit')">✏️ Sửa</button>
+          <button class="log-chip"        id="lf-delete" onclick="setLogFilter('delete')">🗑 Xóa</button>
+          <button class="log-chip"        id="lf-other"  onclick="setLogFilter('other')">⚙️ Khác</button>
+          <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+            <span id="log-count" style="font-size:11px;color:var(--t2)"></span>
+            <button class="btn bs" style="font-size:11px;padding:4px 10px" onclick="clearAllLogs()" id="clear-log-btn">🗑 Xóa log</button>
+          </div>
+        </div>
+        <!-- Row 2: Date filter -->
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;width:100%;padding-top:6px;border-top:1px solid var(--border)">
+          <span style="font-size:11px;font-weight:700;color:var(--t2);letter-spacing:.5px;text-transform:uppercase;min-width:40px">Ngày:</span>
+          <button class="log-chip active" id="ld-all"   onclick="setLogDate('all')">Tất cả</button>
+          <button class="log-chip"        id="ld-today" onclick="setLogDate('today')">Hôm nay</button>
+          <button class="log-chip"        id="ld-yesterday" onclick="setLogDate('yesterday')">Hôm qua</button>
+          <button class="log-chip"        id="ld-week"  onclick="setLogDate('week')">Tuần này</button>
+          <button class="log-chip"        id="ld-month" onclick="setLogDate('month')">Tháng này</button>
+          <button class="log-chip"        id="ld-last"  onclick="setLogDate('last')">Tháng trước</button>
+          <div style="display:flex;align-items:center;gap:5px;margin-left:4px">
+            <span style="font-size:10.5px;color:var(--t2);font-weight:500">Từ:</span>
+            <input type="date" id="ld-from" onchange="setLogDate('custom')"
+              style="font-size:11px;padding:3px 7px;border:1.5px solid var(--border2);border-radius:7px;background:#f8f9fc;color:var(--t0);font-family:var(--fb);outline:none"/>
+            <span style="font-size:10.5px;color:var(--t2);font-weight:500">đến:</span>
+            <input type="date" id="ld-to" onchange="setLogDate('custom')"
+              style="font-size:11px;padding:3px 7px;border:1.5px solid var(--border2);border-radius:7px;background:#f8f9fc;color:var(--t0);font-family:var(--fb);outline:none"/>
+          </div>
         </div>
       </div>
       <div style="flex:1;overflow-y:auto;min-height:0" id="log-list"></div>
@@ -1697,13 +1718,52 @@ const ACTION_META = {
   undo:       {icon:'↩️',label:'Hoàn tác',         bg:'rgba(74,88,120,.1)', col:'var(--t1)'},
 };
 
+let logDateFilter = 'all';
+let logDateFrom = null, logDateTo = null;
+
 function setLogFilter(f){
-  logFilter=f;
-  document.querySelectorAll('.log-chip').forEach((el,i)=>{
-    const map=['all','add','edit','delete','other'];
-    el.classList.toggle('active', map[i]===f);
+  logFilter = f;
+  ['all','add','edit','delete','other'].forEach(k=>{
+    const el=document.getElementById('lf-'+k);
+    if(el) el.classList.toggle('active', k===f);
   });
   renderLog();
+}
+
+function setLogDate(d){
+  logDateFilter = d;
+  ['all','today','yesterday','week','month','last'].forEach(k=>{
+    const el=document.getElementById('ld-'+k);
+    if(el) el.classList.toggle('active', k===d);
+  });
+  if(d==='custom'){
+    ['all','today','yesterday','week','month','last'].forEach(k=>{
+      const el=document.getElementById('ld-'+k); if(el) el.classList.remove('active');
+    });
+    const f=document.getElementById('ld-from');
+    const t=document.getElementById('ld-to');
+    logDateFrom = f&&f.value ? new Date(f.value) : null;
+    logDateTo   = t&&t.value ? new Date(t.value+'T23:59:59') : null;
+  } else {
+    const f=document.getElementById('ld-from'); if(f) f.value='';
+    const t=document.getElementById('ld-to');   if(t) t.value='';
+  }
+  renderLog();
+}
+
+function getDateRange(filter){
+  const now=new Date();
+  const todayStart=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const todayEnd  =new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59);
+  switch(filter){
+    case 'today':     return [todayStart, todayEnd];
+    case 'yesterday': const ys=new Date(todayStart);ys.setDate(ys.getDate()-1);const ye=new Date(ys);ye.setHours(23,59,59);return [ys,ye];
+    case 'week':      const wd=(now.getDay()||7)-1;const ws=new Date(todayStart);ws.setDate(ws.getDate()-wd);return [ws,todayEnd];
+    case 'month':     return [new Date(now.getFullYear(),now.getMonth(),1), todayEnd];
+    case 'last':      return [new Date(now.getFullYear(),now.getMonth()-1,1), new Date(now.getFullYear(),now.getMonth(),0,23,59,59)];
+    case 'custom':    return [logDateFrom, logDateTo];
+    default:          return [null, null];
+  }
 }
 
 function renderLog(){
@@ -1711,10 +1771,21 @@ function renderLog(){
   const cnt=document.getElementById('log-count');
   const clearBtn=document.getElementById('clear-log-btn');
   if(!el) return;
+  // Action filter
   let filtered=activityLog;
   if(logFilter!=='all'){
     const other=['update_all','holiday','import','undo'];
     filtered = logFilter==='other' ? activityLog.filter(x=>other.includes(x.action)) : activityLog.filter(x=>x.action===logFilter);
+  }
+  // Date filter
+  if(logDateFilter!=='all'){
+    const [from, to] = getDateRange(logDateFilter);
+    filtered = filtered.filter(x=>{
+      const d = new Date(x.ts);
+      if(from && d < from) return false;
+      if(to   && d > to)   return false;
+      return true;
+    });
   }
   if(cnt) cnt.textContent=filtered.length+' thao tác';
   if(clearBtn) clearBtn.style.display=currentUser?.role==='admin'?'':'none';
@@ -1803,7 +1874,7 @@ Object.assign(window,{
   sortBy,selRow,renderTable,setChip,
   openAM,closeAM,jumpToDashboard,
   doLogin,doLogout,selectRole,
-  setLogFilter,renderLog,undoEntry,clearAllLogs,
+  setLogFilter,setLogDate,renderLog,undoEntry,clearAllLogs,
   renderTK,renderBD,bdGoToday,bdPopulateMonthSel,bdChangeThis,bdChangePrev,
 });
 
