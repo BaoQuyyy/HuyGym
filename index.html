@@ -480,7 +480,14 @@ tr.sel-row td{background:rgba(108,71,255,.04)!important}
   .sv{font-size:20px}
 
   /* Table area */
-  .ta{padding:10px 12px 70px;gap:10px}
+  .ta{padding:10px 12px 0;gap:10px}
+  /* Table wrapper: add bottom padding so last row isn't hidden behind bottom nav */
+  .tw{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+  /* Log & Staff scroll containers */
+  #log-list, #staff-content{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+
+  /* Scroll pages also need enough bottom padding */
+  .scroll-page{padding:12px 12px calc(80px + env(safe-area-inset-bottom));gap:12px}
 
   /* Filter bar — stack vertically */
   .filter-bar{padding:10px 12px;gap:7px}
@@ -497,7 +504,8 @@ tr.sel-row td{background:rgba(108,71,255,.04)!important}
   .chip{flex-shrink:0;font-size:11.5px;padding:5px 11px}
 
   /* Table: horizontal scroll */
-  .tw{border-radius:10px}
+  .tw{border-radius:10px;overflow:auto}
+  .tw table{padding-bottom:4px}
   table{font-size:12px}
   thead th{padding:8px 10px;font-size:9px}
   td{padding:9px 10px}
@@ -517,7 +525,7 @@ tr.sel-row td{background:rgba(108,71,255,.04)!important}
   .act-btn{width:34px;height:34px;font-size:15px}
 
   /* Scroll pages */
-  .scroll-page{padding:12px 12px 70px;gap:12px}
+  /* (scroll-page padding handled above) */
 
   /* Sum pills: 2-3 per row */
   .sum-pills{padding:12px;gap:8px;grid-template-columns:repeat(2,1fr)}
