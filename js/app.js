@@ -10,6 +10,7 @@ import { initFirebaseSync, initLogSync } from './firebase.js';
 import { initIdentity, doLogin, doLogout, selectRole } from './auth.js';
 import {
   showPage, setFilterChip, sortByColumn, selectRow,
+  renderTable,
   toggleSidebar, closeSidebar, clearBottomNavActive,
   updateOnlineStatusBanner, setStatusBarMessage, tickClock,
   jumpToDashboard,
@@ -60,6 +61,7 @@ Object.assign(window, {
   sortBy:          sortByColumn,
   selectRow,
   setChip:         setFilterChip,
+  renderTable,
 
   // Pages — expose cả tên gốc (dùng trong pages.js onclick) và alias
   renderTK:           renderStatsPage,
