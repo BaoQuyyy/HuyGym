@@ -31,8 +31,10 @@ export const WARNING_DAYS = 7;
 // Timeout chờ Firebase kết nối (ms)
 export const FIREBASE_TIMEOUT_MS = 6000;
 
-// Mật khẩu Admin (trong thực tế nên dùng Firebase Auth)
-export const ADMIN_PASSWORD = '0502';
+// Mật khẩu Admin lưu dạng SHA-256 hash (plain text: '0502')
+// Để đổi mật khẩu: chạy trong console → crypto.subtle.digest('SHA-256', new TextEncoder().encode('mật_khẩu_mới'))
+//   .then(b => console.log([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')))
+export const ADMIN_PASSWORD_HASH = 'e53407a8d98db9e7f965f1fe25eec0a5f33af6e7e9fd4e5a2756ecf9dc87c16f';
 
 // ── Member Status Values ──
 export const STATUS = {
