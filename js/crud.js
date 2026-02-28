@@ -208,9 +208,8 @@ export function executeDelete() {
     logActivity(ACTION.DELETE, buildDateSafeSnapshot(member));
   }
 
-  // Xóa và renumber ID
+  // Xóa, KHÔNG đánh lại ID để tránh log bị sai
   appState.members = appState.members.filter(m => m.id !== appState.deletingMemberId);
-  appState.members.forEach((m, index) => m.id = index + 1);
 
   appState.selectedMemberId = null;
   appState.deletingMemberId = null;
@@ -231,16 +230,32 @@ export function updateAllMembers() {
   setStatusBarMessage('Cập nhật xong ' + appState.members.length + ' học viên');
 }
 
-// ── Bù ngày nghỉ lễ ──
+// ── Mở modal Bù ngày nghỉ lễ ──
 export function addHolidayBonus() {
-  const input = prompt('Số ngày bù cho Hoạt Động + Sắp Hết Hạn:', '1');
-  const bonusDays = parseInt(input);
-  if (!bonusDays || bonusDays < 1) return;
+  const modal = document.getElementById('mbl');
+  if (modal) {
+    document.getElementById('bl-days').value = '1';
+    modal.classList.add('show');
+    setTimeout(() => document.getElementById('bl-days')?.focus(), 150);
+  }
+}
+
+export function closeBuLe() {
+  document.getElementById('mbl')?.classList.remove('show');
+}
+
+export function confirmBuLe() {
+  const val = parseInt(document.getElementById('bl-days')?.value);
+  if (!val || val < 1) {
+    showToast('Vui lòng nhập số ngày hợp lệ!', 'err');
+    return;
+  }
+  closeBuLe();
 
   let updatedCount = 0;
   appState.members.forEach(member => {
     if (member.tt === STATUS.ACTIVE || member.tt === STATUS.WARNING) {
-      member.ngay_bu = (member.ngay_bu || 0) + bonusDays;
+      member.ngay_bu = (member.ngay_bu || 0) + val;
       recalculateMember(member);
       updatedCount++;
     }
@@ -248,8 +263,8 @@ export function addHolidayBonus() {
 
   saveData();
   renderTable();
-  logActivity(ACTION.HOLIDAY, { days: bonusDays, count: updatedCount });
-  showToast(`Đã bù ${bonusDays} ngày cho ${updatedCount} học viên`, 'ok');
+  logActivity(ACTION.HOLIDAY, { days: val, count: updatedCount });
+  showToast(`Đã bù ${val} ngày cho ${updatedCount} học viên`, 'ok');
 }
 
 // ── Export JSON ──
