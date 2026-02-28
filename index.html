@@ -142,7 +142,7 @@
     </div>
     <div class="search-wrap" id="sw-wrap">
       <span class="search-icon">⌕</span>
-      <input type="text" id="search" placeholder="Tìm tên, SĐT, ghi chú…" oninput="renderTable()"/>
+      <input type="text" id="search" placeholder="Tìm tên, SĐT, ghi chú…"/>
     </div>
   </div>
 
@@ -410,6 +410,31 @@
 
 <!-- Hidden file input for JSON import -->
 <input type="file" id="ii" accept=".json" style="display:none" onchange="handleImport(event)"/>
+
+<!-- ══ MODAL: Bù ngày nghỉ lễ ══ -->
+<div class="modal-backdrop confirm-modal" id="mbl" onclick="if(event.target===this)closeBuLe()">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <div class="modal-title">🎉 Bù Ngày Nghỉ Lễ</div>
+      <button class="modal-close" onclick="closeBuLe()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="color:var(--t1);font-size:13px;line-height:1.7;margin-bottom:16px">
+        Cộng thêm số ngày bù cho tất cả học viên đang <b>Hoạt Động</b> và <b>Sắp Hết Hạn</b>.
+      </div>
+      <div class="form-group">
+        <label class="form-label">Số ngày bù *</label>
+        <input class="form-input" id="bl-days" type="number" min="1" max="30" value="1"
+          placeholder="Nhập số ngày…"
+          onkeydown="if(event.key==='Enter')confirmBuLe()"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeBuLe()">Hủy</button>
+      <button class="btn btn-warning"   onclick="confirmBuLe()">🎉 Xác nhận bù</button>
+    </div>
+  </div>
+</div>
 
 <!-- ══ BOTTOM NAV (mobile only) ══ -->
 <nav class="bottom-nav" id="bottom-nav">
